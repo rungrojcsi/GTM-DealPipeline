@@ -8,13 +8,46 @@
 >
 > **Internal use only — CSI GROUPS.** ผลลัพธ์การรัน (deals_log.csv, feedback CSV, optimized prompt) มีข้อมูลดีลจริง — ถูกกันไว้ใน `.gitignore` ห้าม commit
 
-## GTM Foundation
+## 1. Pain Points — ปัญหาที่เจอ
+
+ปัญหาในกระบวนการคัดกรองดีลก่อนมีเครื่องมือนี้:
+
+- **คัดกรองด้วยดุลยพินิจรายบุคคล** — เกณฑ์ BANTi-F³ มีนิยามใน Pillar 2 แล้ว แต่การให้คะแนนจริงขึ้นกับคนประเมิน ผลไม่คงเส้นคงวาและเทียบข้ามดีลไม่ได้
+- **ดีลที่ไม่ควรไล่หลุดเข้ามากินเวลา** — ไม่มี gate ที่บังคับใช้จริงก่อน Discovery ทำให้ทีม solution เสียเวลากับดีลที่ possibility ต่ำ
+- **การจับคู่ solution ช้าและพึ่งตัวบุคคล** — ความรู้ว่า solution ไหนตอบ requirement ไหนอยู่ในหัวคน ไม่มีคลังกลาง ทำให้ SLA ของ Discover Stage (14 วัน) ทำได้ยาก
+- **ผลตัดสินไม่ถูกเก็บเป็นข้อมูล** — Go/No-Go, Tier, เหตุผล ไม่ถูกบันทึกเป็นระบบ วัด win rate / cost per stage ย้อนหลัง (KPI ใน Pillar 1) ไม่ได้
+
+## 2. Gap — ช่องว่างที่ยังไม่มีอะไรอุด
+
+ช่องว่างระหว่างกรอบ GTM ที่ออกแบบไว้กับเครื่องมือที่มีอยู่:
+
+| กรอบที่ออกแบบไว้ | สิ่งที่ขาด |
+|------------------|------------|
+| Pillar 2 — เกณฑ์ BANTi-F³ ชัดเจน | ไม่มีตัวช่วยให้คะแนนที่ใช้เกณฑ์เดียวกันทุกดีล |
+| Pillar 4 — gates 3 จุด (Possibility / Solution Fit / Competitiveness) | 2 gate แรกไม่มีระบบรองรับ ทำในสไลด์/สเปรดชีตมือ |
+| Solution portfolio | ไม่มี solution master กลางที่ agent หรือคนใหม่ใช้อ้างอิงได้ |
+| Continuous improvement (Pillar 8) | ไม่มีวงจรเก็บ feedback จากผลตัดสินจริงกลับมาปรับเกณฑ์ |
+
+## 3. Concept — แนวคิดของเครื่องมือ
+
+ใช้ LLM (Claude) เป็น agent ประจำ gate — **ให้ AI เสนอ คนตัดสิน**:
+
+1. **หนึ่ง agent ต่อหนึ่ง gate** ตาม Pillar 4: Scoring (Possibility) → Discovery → Solution Shaping (Solution Fit: PPS)
+2. **เกณฑ์อยู่ใน prompt เป็นลายลักษณ์อักษร** — คะแนน BANTi แต่ละช่องมีนิยามตายตัว ผลออกเป็น JSON ตรวจสอบและเก็บลง log ได้ทุกดีล
+3. **Human-in-the-loop** — ทุกขั้นมีช่องให้คนแก้ผล (correct Go/No-Go, correct Tier) พร้อมเหตุผล
+4. **วงจรปรับปรุงตัวเอง** — Prompt Optimizer นำเคสที่ AI ตอบผิดจาก feedback log ไปให้ LLM เสนอ prompt ใหม่ (apply/rollback ได้) — ตอบ Pillar 8
+
+## 4. ตำแหน่งในกระบวนการ GTM
+
+แนวคิดข้างบนเข้าไปเสียบตรงไหนของกระบวนการจริง — เริ่มจากภาพใหญ่ แล้วซูมเข้า Pillar 4:
+
+### GTM Foundation — ภาพใหญ่ 8 Pillars
 
 เครื่องมือนี้เป็นส่วนหนึ่งของ GTM 8 Pillars (New Optimized Flow: Sales → Go-To-Market → Engineering) — รองรับ **Pillar 2 Deal Qualification** และ **Pillar 4 Process & Tiering**:
 
 ![GTM Foundation — 8 Pillars](docs/images/gtm-foundation.png)
 
-## Business workflow (GTM Pillar 4 : Processes and Tiering)
+### Business workflow (Pillar 4 : Processes and Tiering)
 
 กระบวนการขายจริงตามสไลด์ทางการ (stages + SLA + gates + Prospects Tiering):
 
@@ -54,7 +87,7 @@ flowchart LR
 | Estimation & Proposal | ⏳ ยังไม่ทำ (มีปุ่ม Proceed to Estimation รอไว้) | — |
 | Deal Support & Close | ⏳ นอกขอบเขต POC | — |
 
-### Prospects Tiering
+#### Prospects Tiering
 
 ผล F³ จากขั้น Scoring/Shaping ชี้ Tier ของการเสนอ (MB = ล้านบาท):
 
@@ -64,36 +97,7 @@ flowchart LR
 | 2 | Proposal Propose (Story-Driven) | มี customization, มีการแข่งขัน | 1–3 MB | BizDomain, SolDomain |
 | 3 | Consulting Propose (Strategic-Driven) | ซับซ้อน, ระดับ C-Level | >5 MB | GTM, SolDomain |
 
-## Pain Points
-
-ปัญหาในกระบวนการคัดกรองดีลก่อนมีเครื่องมือนี้:
-
-- **คัดกรองด้วยดุลยพินิจรายบุคคล** — เกณฑ์ BANTi-F³ มีนิยามใน Pillar 2 แล้ว แต่การให้คะแนนจริงขึ้นกับคนประเมิน ผลไม่คงเส้นคงวาและเทียบข้ามดีลไม่ได้
-- **ดีลที่ไม่ควรไล่หลุดเข้ามากินเวลา** — ไม่มี gate ที่บังคับใช้จริงก่อน Discovery ทำให้ทีม solution เสียเวลากับดีลที่ possibility ต่ำ
-- **การจับคู่ solution ช้าและพึ่งตัวบุคคล** — ความรู้ว่า solution ไหนตอบ requirement ไหนอยู่ในหัวคน ไม่มีคลังกลาง ทำให้ SLA ของ Discover Stage (14 วัน) ทำได้ยาก
-- **ผลตัดสินไม่ถูกเก็บเป็นข้อมูล** — Go/No-Go, Tier, เหตุผล ไม่ถูกบันทึกเป็นระบบ วัด win rate / cost per stage ย้อนหลัง (KPI ใน Pillar 1) ไม่ได้
-
-## Gap
-
-ช่องว่างระหว่างกรอบ GTM ที่ออกแบบไว้กับเครื่องมือที่มีอยู่:
-
-| กรอบที่ออกแบบไว้ | สิ่งที่ขาด |
-|------------------|------------|
-| Pillar 2 — เกณฑ์ BANTi-F³ ชัดเจน | ไม่มีตัวช่วยให้คะแนนที่ใช้เกณฑ์เดียวกันทุกดีล |
-| Pillar 4 — gates 3 จุด (Possibility / Solution Fit / Competitiveness) | 2 gate แรกไม่มีระบบรองรับ ทำในสไลด์/สเปรดชีตมือ |
-| Solution portfolio | ไม่มี solution master กลางที่ agent หรือคนใหม่ใช้อ้างอิงได้ |
-| Continuous improvement (Pillar 8) | ไม่มีวงจรเก็บ feedback จากผลตัดสินจริงกลับมาปรับเกณฑ์ |
-
-## Concept
-
-ใช้ LLM (Claude) เป็น agent ประจำ gate — **ให้ AI เสนอ คนตัดสิน**:
-
-1. **หนึ่ง agent ต่อหนึ่ง gate** ตาม Pillar 4: Scoring (Possibility) → Discovery → Solution Shaping (Solution Fit: PPS)
-2. **เกณฑ์อยู่ใน prompt เป็นลายลักษณ์อักษร** — คะแนน BANTi แต่ละช่องมีนิยามตายตัว ผลออกเป็น JSON ตรวจสอบและเก็บลง log ได้ทุกดีล
-3. **Human-in-the-loop** — ทุกขั้นมีช่องให้คนแก้ผล (correct Go/No-Go, correct Tier) พร้อมเหตุผล
-4. **วงจรปรับปรุงตัวเอง** — Prompt Optimizer นำเคสที่ AI ตอบผิดจาก feedback log ไปให้ LLM เสนอ prompt ใหม่ (apply/rollback ได้) — ตอบ Pillar 8
-
-## Design
+## 5. Design — การออกแบบ
 
 หลักการออกแบบ:
 
@@ -121,7 +125,7 @@ flowchart LR
 | 2. Discovery | `discovery_agent.py` | จับคู่ pain/requirement กับ `solution_master.md` → Full Fit / Partial Fit / Full Custom |
 | 3. Solution Shaping | `solution_shaping_agent.py` | ออกแบบ module + function list + ประเมินความเสี่ยง → Go/No-Go รอบสอง |
 
-## Project layout
+### Project layout
 
 ```
 app.py                     Gradio UI — 5 แท็บ (Scoring / Discovery / Shaping / History / Prompt Optimizer)
@@ -137,7 +141,7 @@ tests/                     unit tests — mock ทุก external call ไม่
 
 หน้าจอมีระบบเก็บ feedback จากผู้ใช้ลง CSV และแท็บ **Prompt Optimizer** ที่นำเคสที่ AI ตอบผิดไปให้ LLM เสนอ prompt ปรับปรุง (apply/rollback ได้)
 
-## Implementation (สถานะ POC)
+## 6. Implementation — สถานะ POC
 
 | รายการ | สถานะ |
 |--------|--------|
