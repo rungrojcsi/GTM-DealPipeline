@@ -11,7 +11,7 @@ sys.stderr.reconfigure(encoding="utf-8")
 
 client = llm_utils.new_client()
 
-OPTIMIZED_PROMPT_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "optimized_prompt.txt")
+OPTIMIZED_PROMPT_FILE = os.path.join(llm_utils.data_dir(), "optimized_prompt.txt")
 
 
 def get_active_prompt() -> str:

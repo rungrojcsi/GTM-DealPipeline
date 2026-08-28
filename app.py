@@ -11,6 +11,7 @@ from datetime import datetime
 import gradio as gr
 import pandas as pd
 
+import llm_utils
 import scoring_agent
 from discovery_agent import DEFAULT_SOLUTION_MASTER, discover_deal
 from render import (
@@ -29,12 +30,12 @@ from render import (
 from scoring_agent import SYSTEM_PROMPT, score_deal
 from solution_shaping_agent import shape_solution
 
-_HERE = os.path.dirname(os.path.abspath(__file__))
-DEALS_LOG_FILE         = os.path.join(_HERE, "deals_log.csv")
-LOG_FILE               = os.path.join(_HERE, "feedback_log.csv")
-DISCOVERY_LOG_FILE     = os.path.join(_HERE, "discovery_feedback_log.csv")
-SHAPING_LOG_FILE       = os.path.join(_HERE, "shaping_feedback_log.csv")
-OPTIMIZED_PROMPT_FILE  = os.path.join(_HERE, "optimized_prompt.txt")
+_DATA = llm_utils.data_dir()   # local = โฟลเดอร์โค้ด, Azure = /home/data (env DATA_DIR)
+DEALS_LOG_FILE         = os.path.join(_DATA, "deals_log.csv")
+LOG_FILE               = os.path.join(_DATA, "feedback_log.csv")
+DISCOVERY_LOG_FILE     = os.path.join(_DATA, "discovery_feedback_log.csv")
+SHAPING_LOG_FILE       = os.path.join(_DATA, "shaping_feedback_log.csv")
+OPTIMIZED_PROMPT_FILE  = os.path.join(_DATA, "optimized_prompt.txt")
 
 DEALS_LOG_COLUMNS = [
     "deal_id", "timestamp", "company", "contact", "budget", "need",
@@ -853,4 +854,10 @@ with gr.Blocks(title="Go to Market AI Agent Pipeline") as demo:
     demo.load(fn=get_current_prompt, outputs=[current_prompt, prompt_status])
 
 if __name__ == "__main__":
-    demo.launch(inbrowser=True, theme=gr.themes.Soft())
+    demo.queue()
+    port = os.environ.get("PORT")
+    if port:
+        # Azure App Service / container — ฟังทุก interface บน port ที่แพลตฟอร์มกำหนด
+        demo.launch(server_name="0.0.0.0", server_port=int(port), theme=gr.themes.Soft())
+    else:
+        demo.launch(inbrowser=True, theme=gr.themes.Soft())

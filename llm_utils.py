@@ -33,6 +33,17 @@ def parse_json_response(text: str) -> dict:
     return json.loads(strip_json_fences(text))
 
 
+def data_dir() -> str:
+    """โฟลเดอร์เก็บไฟล์ที่ระบบเขียนตอนรัน (CSV log, optimized prompt).
+
+    ค่าเริ่มต้น = โฟลเดอร์โค้ด (รันในเครื่อง) — บน Azure App Service ตั้ง env DATA_DIR=/home/data
+    เพราะ /home เป็นส่วนเดียวที่คงอยู่ข้าม restart
+    """
+    d = os.environ.get("DATA_DIR") or os.path.dirname(os.path.abspath(__file__))
+    os.makedirs(d, exist_ok=True)
+    return d
+
+
 def load_solution_master(path: str) -> str:
     with open(path, encoding="utf-8") as f:
         return f.read()
