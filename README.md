@@ -64,7 +64,46 @@ flowchart LR
 | 2 | Proposal Propose (Story-Driven) | มี customization, มีการแข่งขัน | 1–3 MB | BizDomain, SolDomain |
 | 3 | Consulting Propose (Strategic-Driven) | ซับซ้อน, ระดับ C-Level | >5 MB | GTM, SolDomain |
 
-## Pipeline ในแอป (3 agents)
+## Pain Points
+
+ปัญหาในกระบวนการคัดกรองดีลก่อนมีเครื่องมือนี้:
+
+- **คัดกรองด้วยดุลยพินิจรายบุคคล** — เกณฑ์ BANTi-F³ มีนิยามใน Pillar 2 แล้ว แต่การให้คะแนนจริงขึ้นกับคนประเมิน ผลไม่คงเส้นคงวาและเทียบข้ามดีลไม่ได้
+- **ดีลที่ไม่ควรไล่หลุดเข้ามากินเวลา** — ไม่มี gate ที่บังคับใช้จริงก่อน Discovery ทำให้ทีม solution เสียเวลากับดีลที่ possibility ต่ำ
+- **การจับคู่ solution ช้าและพึ่งตัวบุคคล** — ความรู้ว่า solution ไหนตอบ requirement ไหนอยู่ในหัวคน ไม่มีคลังกลาง ทำให้ SLA ของ Discover Stage (14 วัน) ทำได้ยาก
+- **ผลตัดสินไม่ถูกเก็บเป็นข้อมูล** — Go/No-Go, Tier, เหตุผล ไม่ถูกบันทึกเป็นระบบ วัด win rate / cost per stage ย้อนหลัง (KPI ใน Pillar 1) ไม่ได้
+
+## Gap
+
+ช่องว่างระหว่างกรอบ GTM ที่ออกแบบไว้กับเครื่องมือที่มีอยู่:
+
+| กรอบที่ออกแบบไว้ | สิ่งที่ขาด |
+|------------------|------------|
+| Pillar 2 — เกณฑ์ BANTi-F³ ชัดเจน | ไม่มีตัวช่วยให้คะแนนที่ใช้เกณฑ์เดียวกันทุกดีล |
+| Pillar 4 — gates 3 จุด (Possibility / Solution Fit / Competitiveness) | 2 gate แรกไม่มีระบบรองรับ ทำในสไลด์/สเปรดชีตมือ |
+| Solution portfolio | ไม่มี solution master กลางที่ agent หรือคนใหม่ใช้อ้างอิงได้ |
+| Continuous improvement (Pillar 8) | ไม่มีวงจรเก็บ feedback จากผลตัดสินจริงกลับมาปรับเกณฑ์ |
+
+## Concept
+
+ใช้ LLM (Claude) เป็น agent ประจำ gate — **ให้ AI เสนอ คนตัดสิน**:
+
+1. **หนึ่ง agent ต่อหนึ่ง gate** ตาม Pillar 4: Scoring (Possibility) → Discovery → Solution Shaping (Solution Fit: PPS)
+2. **เกณฑ์อยู่ใน prompt เป็นลายลักษณ์อักษร** — คะแนน BANTi แต่ละช่องมีนิยามตายตัว ผลออกเป็น JSON ตรวจสอบและเก็บลง log ได้ทุกดีล
+3. **Human-in-the-loop** — ทุกขั้นมีช่องให้คนแก้ผล (correct Go/No-Go, correct Tier) พร้อมเหตุผล
+4. **วงจรปรับปรุงตัวเอง** — Prompt Optimizer นำเคสที่ AI ตอบผิดจาก feedback log ไปให้ LLM เสนอ prompt ใหม่ (apply/rollback ได้) — ตอบ Pillar 8
+
+## Design
+
+หลักการออกแบบ:
+
+- **แยกชั้นชัด**: agent (ตรรกะ + prompt) / `llm_utils.py` (ส่วนกลาง) / `render.py` (แสดงผล) / `app.py` (UI wiring) — agent ทุกตัวเรียกใช้เดี่ยวๆ จาก CLI ได้โดยไม่ต้องเปิด UI
+- **สัญญาข้อมูลเป็น JSON schema ใน prompt** — บังคับโครงผลลัพธ์ให้เครื่องอ่านต่อได้ ไม่รับข้อความอิสระ
+- **ความรู้ solution แยกจากโค้ด** — `solution_master.md` แก้ได้โดยไม่ต้องแตะโปรแกรม
+- **เก็บผลทุกดีลลง log** (CSV ในเฟส POC) — deal_id รันอัตโนมัติ ผูกผลทั้ง 3 ขั้นเข้าด้วยกัน ดูย้อนหลังได้ในแท็บ History
+- **ทดสอบแบบ offline ทั้งหมด** — fake client แทน API จริง รันได้โดยไม่มีคีย์ ไม่มีค่าใช้จ่าย
+
+### Pipeline ในแอป (3 agents)
 
 ```mermaid
 flowchart LR
@@ -97,6 +136,20 @@ tests/                     unit tests — mock ทุก external call ไม่
 ```
 
 หน้าจอมีระบบเก็บ feedback จากผู้ใช้ลง CSV และแท็บ **Prompt Optimizer** ที่นำเคสที่ AI ตอบผิดไปให้ LLM เสนอ prompt ปรับปรุง (apply/rollback ได้)
+
+## Implementation (สถานะ POC)
+
+| รายการ | สถานะ |
+|--------|--------|
+| Scoring agent (BANTi-F³ + Go/No-Go + Tier) | ✅ ใช้งานได้ |
+| Discovery agent (จับคู่กับ solution master) | ✅ ใช้งานได้ |
+| Solution Shaping agent (module/function + F³ + PPS gate) | ✅ ใช้งานได้ |
+| Gradio UI 5 แท็บ + History log + deal_id ผูก 3 ขั้น | ✅ ใช้งานได้ |
+| Feedback loop + Prompt Optimizer (apply/rollback) | ✅ ใช้งานได้ |
+| Unit tests 77 เคส (offline, fake client) + CI (ruff + pytest) | ✅ เขียว |
+| Estimation & Proposal agent (gate ที่ 3: Competitiveness) | ⏳ ยังไม่เริ่ม — มีปุ่ม Proceed รอไว้ |
+| ฐานข้อมูลจริงแทน CSV + ใช้งานหลายคนพร้อมกัน | ⏳ รอผล POC ก่อนตัดสินใจ |
+| Deploy ให้ทีมใช้ (ตอนนี้รันในเครื่องเท่านั้น) | ⏳ นอกขอบเขต POC |
 
 ## Run
 
