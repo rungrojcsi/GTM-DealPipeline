@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.pyc
+venv/
+.env
+
+# Runtime output — ข้อมูลดีลจริง ห้ามเข้า git เด็ดขาด
+*_log.csv
+deals_log.csv
+optimized_prompt.txt
+*.log
+
+# Debug / scratch
+debug_*.txt
+test_output.txt
+discovery_test.txt
+
+# Internal audit reports (client-confidential)
+proposal-audit-*.md
+
+# macOS / editors
+.DS_Store
+.claude/
