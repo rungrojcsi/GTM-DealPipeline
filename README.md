@@ -2,11 +2,59 @@
 
 [![CI](https://github.com/rungrojcsi/GTM-DealPipeline/actions/workflows/ci.yml/badge.svg)](https://github.com/rungrojcsi/GTM-DealPipeline/actions/workflows/ci.yml)
 
-Internal prototype — ท่อคัดกรองดีลขาย (deal qualification pipeline) 3 ขั้นด้วย Claude ผ่านหน้าจอ Gradio
+ท่อคัดกรองดีลขาย (deal qualification pipeline) 3 ขั้นด้วย Claude ผ่านหน้าจอ Gradio — เครื่องมือสนับสนุนกระบวนการ GTM (Pillar 2 Deal Qualification + Pillar 4 Processes & Tiering)
 
+> **สถานะ: POC Phase** — ยังเป็นต้นแบบเพื่อพิสูจน์แนวทาง ยังไม่ใช่ระบบ production: เก็บข้อมูลเป็น CSV ในเครื่อง, ใช้งานคนเดียว, ยังไม่ครอบคลุมขั้น Estimation & Proposal
+>
 > **Internal use only — CSI GROUPS.** ผลลัพธ์การรัน (deals_log.csv, feedback CSV, optimized prompt) มีข้อมูลดีลจริง — ถูกกันไว้ใน `.gitignore` ห้าม commit
 
-## Pipeline
+## Business workflow (GTM Pillar 4 : Processes and Tiering)
+
+ตำแหน่งของเครื่องมือนี้ในกระบวนการขายจริง — กรอบทึบคือขั้นที่ POC ครอบคลุมแล้ว กรอบประคือขั้นที่ยังไม่อยู่ใน POC:
+
+```mermaid
+flowchart LR
+    subgraph LS["Leads Stage — SLA 3 วัน"]
+        LQ["Lead Qualification<br/>Warm call · BANTI<br/>Go/No-Go (Possibility)"]
+    end
+    subgraph DS["Discover Stage — SLA 14 วัน"]
+        DC["Discovery<br/>Pains · Requirements<br/>High-level Scope"]
+        SS["Solution Shaping & Validation<br/>Solution Mapping · Risks · F³ & Tiering<br/>Go/No-Go (Solution Fit: PPS)"]
+    end
+    subgraph PS["Propose Stage"]
+        EP["Estimation & Proposal<br/>Confirm resource · Confirm Tiering<br/>Go/No-Go (Competitiveness)"]
+    end
+    subgraph CS["Closing Stage — SLA 90 วัน"]
+        DSC["Deal Support & Close<br/>Negotiation · Customer Decision"]
+    end
+    LQ -->|Open Case| DC --> SS --> EP --> DSC -->|Closed Ticket| OP([Open Project])
+
+    style LQ fill:#1e5a7a,color:#fff
+    style DC fill:#1e5a7a,color:#fff
+    style SS fill:#1e5a7a,color:#fff
+    style EP stroke-dasharray: 5 5
+    style DSC stroke-dasharray: 5 5
+```
+
+| ขั้นใน workflow | สถานะใน POC | แท็บในแอป |
+|-----------------|-------------|-----------|
+| Lead Qualification (BANTI, Go/No-Go) | ✅ ครอบคลุม | 1. Scoring |
+| Discovery (pains / requirements / scope) | ✅ ครอบคลุม | 2. Discovery |
+| Solution Shaping & Validation (F³, Tiering, PPS gate) | ✅ ครอบคลุม | 3. Solution Shaping |
+| Estimation & Proposal | ⏳ ยังไม่ทำ (มีปุ่ม Proceed to Estimation รอไว้) | — |
+| Deal Support & Close | ⏳ นอกขอบเขต POC | — |
+
+### Prospects Tiering
+
+ผล F³ จากขั้น Scoring/Shaping ชี้ Tier ของการเสนอ (MB = ล้านบาท):
+
+| Tier | แนวทางเสนอ | ลักษณะดีล | มูลค่า | ผู้รับผิดชอบ (PC) |
+|------|-----------|-----------|--------|--------------------|
+| 1 | Template Propose | Solution fit, customization ต่ำ, ความเสี่ยงต่ำ | >1 MB | BizDomain |
+| 2 | Proposal Propose (Story-Driven) | มี customization, มีการแข่งขัน | 1–3 MB | BizDomain, SolDomain |
+| 3 | Consulting Propose (Strategic-Driven) | ซับซ้อน, ระดับ C-Level | >5 MB | GTM, SolDomain |
+
+## Pipeline ในแอป (3 agents)
 
 ```mermaid
 flowchart LR
