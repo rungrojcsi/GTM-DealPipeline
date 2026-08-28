@@ -193,4 +193,4 @@ The 77-case test suite uses a fake client (`tests/_fakes.py`) — no real API ca
 ## Notes
 
 - The API key is read from the `ANTHROPIC_API_KEY` env var only — never hardcode it in a file.
-- The proposal evaluation system lives in a separate repo: [Proposal-Evaluator](https://github.com/rungrojcsi/Proposal-Evaluator)
+- The proposal evaluation system lives in a separate repo: [GTM-Proposal-Audit-Agent](https://github.com/rungrojcsi/GTM-Proposal-Audit-Agent)
