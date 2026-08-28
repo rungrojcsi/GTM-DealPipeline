@@ -8,9 +8,19 @@
 >
 > **Internal use only — CSI GROUPS.** ผลลัพธ์การรัน (deals_log.csv, feedback CSV, optimized prompt) มีข้อมูลดีลจริง — ถูกกันไว้ใน `.gitignore` ห้าม commit
 
+## GTM Foundation
+
+เครื่องมือนี้เป็นส่วนหนึ่งของ GTM 8 Pillars (New Optimized Flow: Sales → Go-To-Market → Engineering) — รองรับ **Pillar 2 Deal Qualification** และ **Pillar 4 Process & Tiering**:
+
+![GTM Foundation — 8 Pillars](docs/images/gtm-foundation.png)
+
 ## Business workflow (GTM Pillar 4 : Processes and Tiering)
 
-ตำแหน่งของเครื่องมือนี้ในกระบวนการขายจริง — กรอบทึบคือขั้นที่ POC ครอบคลุมแล้ว กรอบประคือขั้นที่ยังไม่อยู่ใน POC:
+กระบวนการขายจริงตามสไลด์ทางการ (stages + SLA + gates + Prospects Tiering):
+
+![Pillar 4 — Processes and Tiering](docs/images/pillar4-process-tiering.png)
+
+ตำแหน่งของเครื่องมือนี้ในกระบวนการข้างบน — กรอบทึบคือขั้นที่ POC ครอบคลุมแล้ว กรอบประคือขั้นที่ยังไม่อยู่ใน POC:
 
 ```mermaid
 flowchart LR
