@@ -153,7 +153,7 @@ The UI records user feedback to CSV, and the **Prompt Optimizer** tab feeds case
 | 77 unit tests (offline, fake client) + CI (ruff + pytest) | ✅ Green |
 | Estimation & Proposal agent (3rd gate: Competitiveness) | ⏳ Not started — Proceed button reserved |
 | Real database replacing CSV + multi-user support | ⏳ Pending POC results |
-| Deployment for team use (currently local-only) | ⏳ Out of POC scope |
+| Deployment for team use — Azure App Service + Entra ID login | ✅ Deployed (see Deploy below) |
 
 ## Run
 
@@ -163,6 +163,22 @@ pip install -r requirements.txt
 export ANTHROPIC_API_KEY=sk-ant-...
 python app.py
 ```
+
+## Deploy (Azure App Service)
+
+```bash
+./infra/deploy.sh          # RG + Linux B1 plan + Python 3.12 webapp + zip deploy
+az webapp config appsettings set -g gtm-pipeline-rg -n gtm-deal-pipeline \
+  --settings ANTHROPIC_API_KEY=sk-ant-...        # one-time, never commit the key
+./infra/enable-auth.sh     # Entra ID login required on every request (Easy Auth)
+```
+
+Notes:
+
+- The plan is locked to **1 worker** — data is CSV on local disk; do not scale out
+- Runtime files live under `/home/data` (`DATA_DIR`) so they survive restarts
+- `az webapp deploy` may report **504 GatewayTimeout while warming up Kudu even though the
+  deployment succeeds** — check `az webapp log deployment show` before retrying
 
 ## Tests & lint
 
