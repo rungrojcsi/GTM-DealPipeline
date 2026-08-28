@@ -1,4 +1,4 @@
-# GTM Deal Pipeline
+# GTM Deal Pipeline (POC)
 
 [![CI](https://github.com/rungrojcsi/GTM-DealPipeline/actions/workflows/ci.yml/badge.svg)](https://github.com/rungrojcsi/GTM-DealPipeline/actions/workflows/ci.yml)
 
