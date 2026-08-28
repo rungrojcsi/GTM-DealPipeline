@@ -22,6 +22,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))  # tests/ (for _f
 import _fakes  # noqa: F401,E402 — ตั้ง ANTHROPIC_API_KEY dummy ก่อน import app
 
 import app  # noqa: E402
+import render  # noqa: E402
 
 
 def _tmpfile(suffix=".csv"):
@@ -131,7 +132,7 @@ class RenderRisksTests(unittest.TestCase):
     def test_risk_rows_include_severity_badge(self):
         html = app._render_risks({"technical_risks": [{"risk": "legacy integration", "severity": "High", "mitigation": "poc first"}]})
         self.assertIn("legacy integration", html)
-        self.assertIn(app.SEVERITY_COLORS["High"], html)
+        self.assertIn(render.SEVERITY_COLORS["High"], html)
 
 
 class RenderGoNoGoTests(unittest.TestCase):

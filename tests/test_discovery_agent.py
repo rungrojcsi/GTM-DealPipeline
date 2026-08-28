@@ -86,7 +86,7 @@ class DiscoverDealTests(unittest.TestCase):
         with patch("builtins.open", unittest.mock.mock_open(read_data="# real master")) as mock_open, \
              patch.object(discovery_agent.client.messages, "create", return_value=FakeMessage(json.dumps(VALID_RESULT))):
             discovery_agent.discover_deal("Need WMS.", FULL_SCORING)
-        mock_open.assert_called_once_with(discovery_agent.DEFAULT_SOLUTION_MASTER, "r", encoding="utf-8")
+        mock_open.assert_called_once_with(discovery_agent.DEFAULT_SOLUTION_MASTER, encoding="utf-8")
 
     def test_strips_json_labeled_code_fence(self):
         fenced = "```json\n" + json.dumps(VALID_RESULT) + "\n```"

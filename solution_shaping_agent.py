@@ -1,15 +1,15 @@
-import anthropic
 import json
 import os
 import sys
 
+import anthropic
+
+import llm_utils
+
 sys.stdout.reconfigure(encoding="utf-8")
 sys.stderr.reconfigure(encoding="utf-8")
 
-# API key อ่านจาก env ANTHROPIC_API_KEY เท่านั้น (ห้าม hardcode — คีย์เก่ารั่วขึ้น git ต้อง revoke)
-if not os.environ.get("ANTHROPIC_API_KEY"):
-    raise SystemExit("ต้องตั้ง env ANTHROPIC_API_KEY ก่อนรัน (เช่น setx / export หรือไฟล์ .env)")
-client = anthropic.Anthropic()
+client = llm_utils.new_client()
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
 DEFAULT_SOLUTION_MASTER = os.path.join(_HERE, "solution_master.md")
@@ -119,9 +119,7 @@ customization_ratio = round((custom_count + integration_count) / total_functions
 
 def shape_solution(deal_context: str, scoring_result: dict, discovery_result: dict,
                    solution_master_path: str = None) -> dict:
-    path = solution_master_path or DEFAULT_SOLUTION_MASTER
-    with open(path, "r", encoding="utf-8") as f:
-        master = f.read()
+    master = llm_utils.load_solution_master(solution_master_path or DEFAULT_SOLUTION_MASTER)
 
     # Build context for the agent
     matched = discovery_result.get("matched_solutions", [])
@@ -156,24 +154,18 @@ Generate module breakdown, function lists, F³ assessment, risks, and Go/No-Go d
 
     try:
         response = client.messages.create(
-            model="claude-sonnet-4-6",
+            model=llm_utils.MODEL,
             max_tokens=8192,
             system=_build_system_prompt(master),
             messages=[{"role": "user", "content": user_message}],
         )
-        text = response.content[0].text.strip()
-        if text.startswith("```"):
-            text = text.split("```", 2)[1]
-            if text.startswith("json"):
-                text = text[4:]
-            text = text.rsplit("```", 1)[0].strip()
-        return json.loads(text)
+        return llm_utils.parse_json_response(response.content[0].text)
     except anthropic.AuthenticationError:
-        raise RuntimeError("API Key ไม่ถูกต้อง")
+        raise RuntimeError("API Key ไม่ถูกต้อง") from None
     except json.JSONDecodeError as e:
-        raise RuntimeError(f"Model ส่ง response ที่ไม่ใช่ JSON: {e}")
+        raise RuntimeError(f"Model ส่ง response ที่ไม่ใช่ JSON: {e}") from e
     except Exception as e:
-        raise RuntimeError(f"Error: {e}")
+        raise RuntimeError(f"Error: {e}") from e
 
 
 if __name__ == "__main__":

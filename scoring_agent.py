@@ -1,22 +1,22 @@
-import anthropic
 import json
 import os
 import sys
 
+import anthropic
+
+import llm_utils
+
 sys.stdout.reconfigure(encoding="utf-8")
 sys.stderr.reconfigure(encoding="utf-8")
 
-# API key อ่านจาก env ANTHROPIC_API_KEY เท่านั้น (ห้าม hardcode — คีย์เก่ารั่วขึ้น git ต้อง revoke)
-if not os.environ.get("ANTHROPIC_API_KEY"):
-    raise SystemExit("ต้องตั้ง env ANTHROPIC_API_KEY ก่อนรัน (เช่น setx / export หรือไฟล์ .env)")
-client = anthropic.Anthropic()
+client = llm_utils.new_client()
 
 OPTIMIZED_PROMPT_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "optimized_prompt.txt")
 
 
 def get_active_prompt() -> str:
     if os.path.exists(OPTIMIZED_PROMPT_FILE):
-        with open(OPTIMIZED_PROMPT_FILE, "r", encoding="utf-8") as f:
+        with open(OPTIMIZED_PROMPT_FILE, encoding="utf-8") as f:
             return f.read()
     return SYSTEM_PROMPT
 
@@ -90,24 +90,18 @@ Score 3-4 for partial fit, 1-2 for weak, 0 for none.
 def score_deal(deal_context: str) -> dict:
     try:
         response = client.messages.create(
-            model="claude-sonnet-4-6",
+            model=llm_utils.MODEL,
             max_tokens=1000,
             system=get_active_prompt(),
             messages=[{"role": "user", "content": deal_context}]
         )
-        text = response.content[0].text.strip()
-        if text.startswith("```"):
-            text = text.split("```", 2)[1]
-            if text.startswith("json"):
-                text = text[4:]
-            text = text.rsplit("```", 1)[0].strip()
-        return json.loads(text)
+        return llm_utils.parse_json_response(response.content[0].text)
     except anthropic.BadRequestError as e:
-        raise SystemExit(f"API Error: {e}")
+        raise SystemExit(f"API Error: {e}") from e
     except anthropic.AuthenticationError:
-        raise SystemExit("API Key ไม่ถูกต้อง กรุณาตรวจสอบ ANTHROPIC_API_KEY")
+        raise SystemExit("API Key ไม่ถูกต้อง กรุณาตรวจสอบ ANTHROPIC_API_KEY") from None
     except json.JSONDecodeError as e:
-        raise SystemExit(f"Model ส่ง response ที่ไม่ใช่ JSON: {e}")
+        raise SystemExit(f"Model ส่ง response ที่ไม่ใช่ JSON: {e}") from e
 
 if __name__ == "__main__":
     print("=== GTM Scoring Agent ===\n")

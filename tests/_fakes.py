@@ -7,8 +7,8 @@ import os
 
 os.environ.setdefault("ANTHROPIC_API_KEY", "test-dummy-key")
 
-import httpx
 import anthropic
+import httpx
 
 _DUMMY_REQUEST = httpx.Request("POST", "https://api.anthropic.com/v1/messages")
 
