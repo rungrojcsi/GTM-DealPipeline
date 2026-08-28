@@ -2,72 +2,72 @@
 
 [![CI](https://github.com/rungrojcsi/GTM-DealPipeline/actions/workflows/ci.yml/badge.svg)](https://github.com/rungrojcsi/GTM-DealPipeline/actions/workflows/ci.yml)
 
-ท่อคัดกรองดีลขาย (deal qualification pipeline) 3 ขั้นด้วย Claude ผ่านหน้าจอ Gradio — เครื่องมือสนับสนุนกระบวนการ GTM (Pillar 2 Deal Qualification + Pillar 4 Processes & Tiering)
+A three-stage deal qualification pipeline powered by Claude with a Gradio UI — a supporting tool for the GTM process (Pillar 2 Deal Qualification + Pillar 4 Processes & Tiering).
 
-> **สถานะ: POC Phase** — ยังเป็นต้นแบบเพื่อพิสูจน์แนวทาง ยังไม่ใช่ระบบ production: เก็บข้อมูลเป็น CSV ในเครื่อง, ใช้งานคนเดียว, ยังไม่ครอบคลุมขั้น Estimation & Proposal
+> **Status: POC Phase** — a prototype to prove the approach, not a production system: data is stored as local CSV files, single-user only, and the Estimation & Proposal stage is not covered yet.
 >
-> **Internal use only — CSI GROUPS.** ผลลัพธ์การรัน (deals_log.csv, feedback CSV, optimized prompt) มีข้อมูลดีลจริง — ถูกกันไว้ใน `.gitignore` ห้าม commit
+> **Internal use only — CSI GROUPS.** Run artifacts (deals_log.csv, feedback CSVs, optimized prompt) contain real deal data — they are excluded via `.gitignore` and must never be committed.
 
-## 1. Pain Points — ปัญหาที่เจอ
+## 1. Pain Points
 
-ปัญหาในกระบวนการคัดกรองดีลก่อนมีเครื่องมือนี้:
+Problems in the deal qualification process before this tool existed:
 
-- **คัดกรองด้วยดุลยพินิจรายบุคคล** — เกณฑ์ BANTi-F³ มีนิยามใน Pillar 2 แล้ว แต่การให้คะแนนจริงขึ้นกับคนประเมิน ผลไม่คงเส้นคงวาและเทียบข้ามดีลไม่ได้
-- **ดีลที่ไม่ควรไล่หลุดเข้ามากินเวลา** — ไม่มี gate ที่บังคับใช้จริงก่อน Discovery ทำให้ทีม solution เสียเวลากับดีลที่ possibility ต่ำ
-- **การจับคู่ solution ช้าและพึ่งตัวบุคคล** — ความรู้ว่า solution ไหนตอบ requirement ไหนอยู่ในหัวคน ไม่มีคลังกลาง ทำให้ SLA ของ Discover Stage (14 วัน) ทำได้ยาก
-- **ผลตัดสินไม่ถูกเก็บเป็นข้อมูล** — Go/No-Go, Tier, เหตุผล ไม่ถูกบันทึกเป็นระบบ วัด win rate / cost per stage ย้อนหลัง (KPI ใน Pillar 1) ไม่ได้
+- **Qualification relied on individual judgment** — the BANTi-F³ criteria were defined in Pillar 2, but actual scoring depended on whoever assessed the deal, so results were inconsistent and not comparable across deals.
+- **Low-potential deals slipped through and consumed effort** — no gate was actually enforced before Discovery, so the solution team spent time on deals with low possibility.
+- **Solution matching was slow and person-dependent** — knowledge of which solution answers which requirement lived in people's heads with no central repository, making the Discover Stage SLA (14 days) hard to meet.
+- **Decisions were not captured as data** — Go/No-Go, Tier, and reasoning were never recorded systematically, so win rate / cost per stage (the KPIs in Pillar 1) could not be measured retrospectively.
 
-## 2. Gap — ช่องว่างที่ยังไม่มีอะไรอุด
+## 2. Gap
 
-ช่องว่างระหว่างกรอบ GTM ที่ออกแบบไว้กับเครื่องมือที่มีอยู่:
+The gap between the GTM framework as designed and the tools that existed:
 
-| กรอบที่ออกแบบไว้ | สิ่งที่ขาด |
-|------------------|------------|
-| Pillar 2 — เกณฑ์ BANTi-F³ ชัดเจน | ไม่มีตัวช่วยให้คะแนนที่ใช้เกณฑ์เดียวกันทุกดีล |
-| Pillar 4 — gates 3 จุด (Possibility / Solution Fit / Competitiveness) | 2 gate แรกไม่มีระบบรองรับ ทำในสไลด์/สเปรดชีตมือ |
-| Solution portfolio | ไม่มี solution master กลางที่ agent หรือคนใหม่ใช้อ้างอิงได้ |
-| Continuous improvement (Pillar 8) | ไม่มีวงจรเก็บ feedback จากผลตัดสินจริงกลับมาปรับเกณฑ์ |
+| Designed in the framework | What was missing |
+|---------------------------|------------------|
+| Pillar 2 — clear BANTi-F³ criteria | No scoring aid that applies the same criteria to every deal |
+| Pillar 4 — three gates (Possibility / Solution Fit / Competitiveness) | The first two gates had no system support — done in slides / manual spreadsheets |
+| Solution portfolio | No central solution master that agents or new joiners could reference |
+| Continuous improvement (Pillar 8) | No loop feeding real decision feedback back into the criteria |
 
-## 3. Concept — แนวคิดของเครื่องมือ
+## 3. Concept
 
-ใช้ LLM (Claude) เป็น agent ประจำ gate — **ให้ AI เสนอ คนตัดสิน**:
+Use an LLM (Claude) as the agent at each gate — **AI proposes, humans decide**:
 
-1. **หนึ่ง agent ต่อหนึ่ง gate** ตาม Pillar 4: Scoring (Possibility) → Discovery → Solution Shaping (Solution Fit: PPS)
-2. **เกณฑ์อยู่ใน prompt เป็นลายลักษณ์อักษร** — คะแนน BANTi แต่ละช่องมีนิยามตายตัว ผลออกเป็น JSON ตรวจสอบและเก็บลง log ได้ทุกดีล
-3. **Human-in-the-loop** — ทุกขั้นมีช่องให้คนแก้ผล (correct Go/No-Go, correct Tier) พร้อมเหตุผล
-4. **วงจรปรับปรุงตัวเอง** — Prompt Optimizer นำเคสที่ AI ตอบผิดจาก feedback log ไปให้ LLM เสนอ prompt ใหม่ (apply/rollback ได้) — ตอบ Pillar 8
+1. **One agent per gate**, following Pillar 4: Scoring (Possibility) → Discovery → Solution Shaping (Solution Fit: PPS)
+2. **Criteria written down in the prompt** — every BANTi component has a fixed definition; output is JSON that can be audited and logged for every deal
+3. **Human-in-the-loop** — every stage lets a person correct the result (correct Go/No-Go, correct Tier) with a reason
+4. **Self-improvement loop** — the Prompt Optimizer takes cases the AI got wrong from the feedback log and asks the LLM to propose an improved prompt (apply/rollback supported) — addressing Pillar 8
 
-## 4. ตำแหน่งในกระบวนการ GTM
+## 4. Where It Sits in the GTM Process
 
-แนวคิดข้างบนเข้าไปเสียบตรงไหนของกระบวนการจริง — เริ่มจากภาพใหญ่ แล้วซูมเข้า Pillar 4:
+Where the concept above plugs into the real process — starting from the big picture, then zooming into Pillar 4:
 
-### GTM Foundation — ภาพใหญ่ 8 Pillars
+### GTM Foundation — the 8 Pillars
 
-เครื่องมือนี้เป็นส่วนหนึ่งของ GTM 8 Pillars (New Optimized Flow: Sales → Go-To-Market → Engineering) — รองรับ **Pillar 2 Deal Qualification** และ **Pillar 4 Process & Tiering**:
+This tool is part of the GTM 8 Pillars (New Optimized Flow: Sales → Go-To-Market → Engineering) — supporting **Pillar 2 Deal Qualification** and **Pillar 4 Process & Tiering**:
 
 ![GTM Foundation — 8 Pillars](docs/images/gtm-foundation.png)
 
 ### Business workflow (Pillar 4 : Processes and Tiering)
 
-กระบวนการขายจริงตามสไลด์ทางการ (stages + SLA + gates + Prospects Tiering):
+The actual sales process from the official deck (stages + SLA + gates + Prospects Tiering):
 
 ![Pillar 4 — Processes and Tiering](docs/images/pillar4-process-tiering.png)
 
-ตำแหน่งของเครื่องมือนี้ในกระบวนการข้างบน — กรอบทึบคือขั้นที่ POC ครอบคลุมแล้ว กรอบประคือขั้นที่ยังไม่อยู่ใน POC:
+Where this tool sits in the process above — solid boxes are stages the POC already covers, dashed boxes are not in the POC yet:
 
 ```mermaid
 flowchart LR
-    subgraph LS["Leads Stage — SLA 3 วัน"]
+    subgraph LS["Leads Stage — SLA 3 days"]
         LQ["Lead Qualification<br/>Warm call · BANTI<br/>Go/No-Go (Possibility)"]
     end
-    subgraph DS["Discover Stage — SLA 14 วัน"]
+    subgraph DS["Discover Stage — SLA 14 days"]
         DC["Discovery<br/>Pains · Requirements<br/>High-level Scope"]
         SS["Solution Shaping & Validation<br/>Solution Mapping · Risks · F³ & Tiering<br/>Go/No-Go (Solution Fit: PPS)"]
     end
     subgraph PS["Propose Stage"]
         EP["Estimation & Proposal<br/>Confirm resource · Confirm Tiering<br/>Go/No-Go (Competitiveness)"]
     end
-    subgraph CS["Closing Stage — SLA 90 วัน"]
+    subgraph CS["Closing Stage — SLA 90 days"]
         DSC["Deal Support & Close<br/>Negotiation · Customer Decision"]
     end
     LQ -->|Open Case| DC --> SS --> EP --> DSC -->|Closed Ticket| OP([Open Project])
@@ -79,35 +79,35 @@ flowchart LR
     style DSC stroke-dasharray: 5 5
 ```
 
-| ขั้นใน workflow | สถานะใน POC | แท็บในแอป |
-|-----------------|-------------|-----------|
-| Lead Qualification (BANTI, Go/No-Go) | ✅ ครอบคลุม | 1. Scoring |
-| Discovery (pains / requirements / scope) | ✅ ครอบคลุม | 2. Discovery |
-| Solution Shaping & Validation (F³, Tiering, PPS gate) | ✅ ครอบคลุม | 3. Solution Shaping |
-| Estimation & Proposal | ⏳ ยังไม่ทำ (มีปุ่ม Proceed to Estimation รอไว้) | — |
-| Deal Support & Close | ⏳ นอกขอบเขต POC | — |
+| Workflow stage | POC status | App tab |
+|----------------|------------|---------|
+| Lead Qualification (BANTI, Go/No-Go) | ✅ Covered | 1. Scoring |
+| Discovery (pains / requirements / scope) | ✅ Covered | 2. Discovery |
+| Solution Shaping & Validation (F³, Tiering, PPS gate) | ✅ Covered | 3. Solution Shaping |
+| Estimation & Proposal | ⏳ Not yet (Proceed to Estimation button reserved) | — |
+| Deal Support & Close | ⏳ Out of POC scope | — |
 
 #### Prospects Tiering
 
-ผล F³ จากขั้น Scoring/Shaping ชี้ Tier ของการเสนอ (MB = ล้านบาท):
+The F³ result from the Scoring/Shaping stages determines the proposal tier (MB = million THB):
 
-| Tier | แนวทางเสนอ | ลักษณะดีล | มูลค่า | ผู้รับผิดชอบ (PC) |
-|------|-----------|-----------|--------|--------------------|
-| 1 | Template Propose | Solution fit, customization ต่ำ, ความเสี่ยงต่ำ | >1 MB | BizDomain |
-| 2 | Proposal Propose (Story-Driven) | มี customization, มีการแข่งขัน | 1–3 MB | BizDomain, SolDomain |
-| 3 | Consulting Propose (Strategic-Driven) | ซับซ้อน, ระดับ C-Level | >5 MB | GTM, SolDomain |
+| Tier | Proposal approach | Deal profile | Value | Owner (PC) |
+|------|-------------------|--------------|-------|------------|
+| 1 | Template Propose | Solution fit, low customization, low risk | >1 MB | BizDomain |
+| 2 | Proposal Propose (Story-Driven) | Customization, competitive | 1–3 MB | BizDomain, SolDomain |
+| 3 | Consulting Propose (Strategic-Driven) | Complex, C-Level | >5 MB | GTM, SolDomain |
 
-## 5. Design — การออกแบบ
+## 5. Design
 
-หลักการออกแบบ:
+Design principles:
 
-- **แยกชั้นชัด**: agent (ตรรกะ + prompt) / `llm_utils.py` (ส่วนกลาง) / `render.py` (แสดงผล) / `app.py` (UI wiring) — agent ทุกตัวเรียกใช้เดี่ยวๆ จาก CLI ได้โดยไม่ต้องเปิด UI
-- **สัญญาข้อมูลเป็น JSON schema ใน prompt** — บังคับโครงผลลัพธ์ให้เครื่องอ่านต่อได้ ไม่รับข้อความอิสระ
-- **ความรู้ solution แยกจากโค้ด** — `solution_master.md` แก้ได้โดยไม่ต้องแตะโปรแกรม
-- **เก็บผลทุกดีลลง log** (CSV ในเฟส POC) — deal_id รันอัตโนมัติ ผูกผลทั้ง 3 ขั้นเข้าด้วยกัน ดูย้อนหลังได้ในแท็บ History
-- **ทดสอบแบบ offline ทั้งหมด** — fake client แทน API จริง รันได้โดยไม่มีคีย์ ไม่มีค่าใช้จ่าย
+- **Clear layering**: agents (logic + prompt) / `llm_utils.py` (shared core) / `render.py` (presentation) / `app.py` (UI wiring) — every agent can be run standalone from the CLI without opening the UI
+- **Data contract as a JSON schema in the prompt** — output structure is enforced so it stays machine-readable; no free-form text accepted
+- **Solution knowledge separated from code** — `solution_master.md` can be edited without touching the program
+- **Every deal logged** (CSV during the POC phase) — auto-generated deal_id links the results of all three stages together, browsable in the History tab
+- **Fully offline tests** — a fake client replaces the real API; tests run with no key and no cost
 
-### Pipeline ในแอป (3 agents)
+### In-app pipeline (3 agents)
 
 ```mermaid
 flowchart LR
@@ -119,41 +119,41 @@ flowchart LR
     D --> E([Go / No-Go + Tier])
 ```
 
-| ขั้น | ไฟล์ | หน้าที่ |
-|------|------|---------|
-| 1. Scoring | `scoring_agent.py` | ให้คะแนน BANTi (0-100) + F³ (0-15) → Go/No-Go + Tier 1-3 |
-| 2. Discovery | `discovery_agent.py` | จับคู่ pain/requirement กับ `solution_master.md` → Full Fit / Partial Fit / Full Custom |
-| 3. Solution Shaping | `solution_shaping_agent.py` | ออกแบบ module + function list + ประเมินความเสี่ยง → Go/No-Go รอบสอง |
+| Stage | File | Role |
+|-------|------|------|
+| 1. Scoring | `scoring_agent.py` | Scores BANTi (0-100) + F³ (0-15) → Go/No-Go + Tier 1-3 |
+| 2. Discovery | `discovery_agent.py` | Maps pains/requirements against `solution_master.md` → Full Fit / Partial Fit / Full Custom |
+| 3. Solution Shaping | `solution_shaping_agent.py` | Designs modules + function list + assesses risks → second Go/No-Go |
 
 ### Project layout
 
 ```
-app.py                     Gradio UI — 5 แท็บ (Scoring / Discovery / Shaping / History / Prompt Optimizer)
-render.py                  HTML render helpers + สี/label (ไม่ผูกกับ Gradio)
-llm_utils.py               ส่วนกลาง: client, model, JSON parsing, solution master loader
-scoring_agent.py           ขั้น 1 — BANTi-F³ qualification
-discovery_agent.py         ขั้น 2 — solution fit mapping
-solution_shaping_agent.py  ขั้น 3 — solution design + risk
-solution_master.md         คลังความรู้ solution ของบริษัท (agent 2-3 ใช้)
-examples/example-deal.txt  ตัวอย่างข้อมูลป้อน (สมมติทั้งหมด)
-tests/                     unit tests — mock ทุก external call ไม่เรียก API จริง
+app.py                     Gradio UI — 5 tabs (Scoring / Discovery / Shaping / History / Prompt Optimizer)
+render.py                  HTML render helpers + colors/labels (no Gradio dependency)
+llm_utils.py               Shared core: client, model, JSON parsing, solution master loader
+scoring_agent.py           Stage 1 — BANTi-F³ qualification
+discovery_agent.py         Stage 2 — solution fit mapping
+solution_shaping_agent.py  Stage 3 — solution design + risk
+solution_master.md         Company solution knowledge base (used by agents 2-3)
+examples/example-deal.txt  Sample input (entirely fictional)
+tests/                     Unit tests — all external calls mocked, no real API calls
 ```
 
-หน้าจอมีระบบเก็บ feedback จากผู้ใช้ลง CSV และแท็บ **Prompt Optimizer** ที่นำเคสที่ AI ตอบผิดไปให้ LLM เสนอ prompt ปรับปรุง (apply/rollback ได้)
+The UI records user feedback to CSV, and the **Prompt Optimizer** tab feeds cases the AI got wrong to the LLM to propose an improved prompt (apply/rollback supported).
 
-## 6. Implementation — สถานะ POC
+## 6. Implementation (POC status)
 
-| รายการ | สถานะ |
-|--------|--------|
-| Scoring agent (BANTi-F³ + Go/No-Go + Tier) | ✅ ใช้งานได้ |
-| Discovery agent (จับคู่กับ solution master) | ✅ ใช้งานได้ |
-| Solution Shaping agent (module/function + F³ + PPS gate) | ✅ ใช้งานได้ |
-| Gradio UI 5 แท็บ + History log + deal_id ผูก 3 ขั้น | ✅ ใช้งานได้ |
-| Feedback loop + Prompt Optimizer (apply/rollback) | ✅ ใช้งานได้ |
-| Unit tests 77 เคส (offline, fake client) + CI (ruff + pytest) | ✅ เขียว |
-| Estimation & Proposal agent (gate ที่ 3: Competitiveness) | ⏳ ยังไม่เริ่ม — มีปุ่ม Proceed รอไว้ |
-| ฐานข้อมูลจริงแทน CSV + ใช้งานหลายคนพร้อมกัน | ⏳ รอผล POC ก่อนตัดสินใจ |
-| Deploy ให้ทีมใช้ (ตอนนี้รันในเครื่องเท่านั้น) | ⏳ นอกขอบเขต POC |
+| Item | Status |
+|------|--------|
+| Scoring agent (BANTi-F³ + Go/No-Go + Tier) | ✅ Working |
+| Discovery agent (matching against the solution master) | ✅ Working |
+| Solution Shaping agent (modules/functions + F³ + PPS gate) | ✅ Working |
+| Gradio UI 5 tabs + History log + deal_id linking all 3 stages | ✅ Working |
+| Feedback loop + Prompt Optimizer (apply/rollback) | ✅ Working |
+| 77 unit tests (offline, fake client) + CI (ruff + pytest) | ✅ Green |
+| Estimation & Proposal agent (3rd gate: Competitiveness) | ⏳ Not started — Proceed button reserved |
+| Real database replacing CSV + multi-user support | ⏳ Pending POC results |
+| Deployment for team use (currently local-only) | ⏳ Out of POC scope |
 
 ## Run
 
@@ -172,9 +172,9 @@ pytest tests/
 ruff check .
 ```
 
-ชุดทดสอบ 77 เคสใช้ fake client (`tests/_fakes.py`) — ไม่เรียก API จริง ไม่ต้องมีคีย์ · CI รันทั้ง lint + tests ทุก push/PR
+The 77-case test suite uses a fake client (`tests/_fakes.py`) — no real API calls, no key required. CI runs both lint and tests on every push/PR.
 
-## หมายเหตุ
+## Notes
 
-- คีย์อ่านจาก env `ANTHROPIC_API_KEY` เท่านั้น — ห้าม hardcode ลงไฟล์
-- ระบบตรวจข้อเสนอ (proposal evaluator) แยกอยู่คนละ repo: [Proposal-Evaluator](https://github.com/rungrojcsi/Proposal-Evaluator)
+- The API key is read from the `ANTHROPIC_API_KEY` env var only — never hardcode it in a file.
+- The proposal evaluation system lives in a separate repo: [Proposal-Evaluator](https://github.com/rungrojcsi/Proposal-Evaluator)
