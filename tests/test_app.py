@@ -55,9 +55,9 @@ class BadgeTests(unittest.TestCase):
 
 class BuildDealContextTests(unittest.TestCase):
     def test_all_fields_interpolated_with_labels(self):
-        ctx = app.build_deal_context("ACME", "Somchai - CTO", "2M THB", "ERP slow", "60 days", "none", "champion pushing")
+        ctx = app.build_deal_context("ACME", "Alex - CTO", "2M THB", "ERP slow", "60 days", "none", "champion pushing")
         self.assertIn("Company: ACME", ctx)
-        self.assertIn("Contact & Role: Somchai - CTO", ctx)
+        self.assertIn("Contact & Role: Alex - CTO", ctx)
         self.assertIn("Budget: 2M THB", ctx)
         self.assertIn("Need & Pain: ERP slow", ctx)
         self.assertIn("Timeline: 60 days", ctx)
