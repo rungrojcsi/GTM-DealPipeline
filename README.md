@@ -8,6 +8,12 @@ A three-stage deal qualification pipeline powered by Claude with a Gradio UI —
 >
 > **Internal use only — CSI GROUPS.** Run artifacts (deals_log.csv, feedback CSVs, optimized prompt) contain real deal data — they are excluded via `.gitignore` and must never be committed.
 
+## Business End-Users
+
+This tool is one step in a larger shift: turning a **traditional, relationship-driven sales pipeline into a digital GTM operation** — every deal scored, gated, and logged as data instead of living in spreadsheets and gut feel. Users are the GTM/Sales team at each qualification gate.
+
+**From → To:** manual qualification + tribal knowledge → a repeatable, measurable GTM operation (BANTi-F³ scoring, enforced Go/No-Go gates, deal history as data for win-rate & cost-per-stage).
+
 ## 1. Pain Points
 
 Problems in the deal qualification process before this tool existed:
