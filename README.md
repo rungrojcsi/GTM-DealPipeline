@@ -61,31 +61,12 @@ The actual sales process from the official deck (stages + SLA + gates + Prospect
 
 ![Pillar 4 — Processes and Tiering](docs/images/pillar4-process-tiering.png)
 
-Where this tool sits in the process above — solid boxes are stages the POC already covers, dashed boxes are not in the POC yet:
+Where this tool sits in the process above — solid boxes are stages the POC already covers, dashed boxes are not
+in the POC yet:
 
-```mermaid
-flowchart LR
-    subgraph LS["Leads Stage — SLA 3 days"]
-        LQ["Lead Qualification<br/>Warm call · BANTI<br/>Go/No-Go (Possibility)"]
-    end
-    subgraph DS["Discover Stage — SLA 14 days"]
-        DC["Discovery<br/>Pains · Requirements<br/>High-level Scope"]
-        SS["Solution Shaping & Validation<br/>Solution Mapping · Risks · F³ & Tiering<br/>Go/No-Go (Solution Fit: PPS)"]
-    end
-    subgraph PS["Propose Stage"]
-        EP["Estimation & Proposal<br/>Confirm resource · Confirm Tiering<br/>Go/No-Go (Competitiveness)"]
-    end
-    subgraph CS["Closing Stage — SLA 90 days"]
-        DSC["Deal Support & Close<br/>Negotiation · Customer Decision"]
-    end
-    LQ -->|Open Case| DC --> SS --> EP --> DSC -->|Closed Ticket| OP([Open Project])
+![GTM sales process — where the POC covers and where it stops](docs/images/gtm-process-coverage.png)
 
-    style LQ fill:#1e5a7a,color:#fff
-    style DC fill:#1e5a7a,color:#fff
-    style SS fill:#1e5a7a,color:#fff
-    style EP stroke-dasharray: 5 5
-    style DSC stroke-dasharray: 5 5
-```
+Diagram source: [`docs/gtm-process-coverage.html`](docs/gtm-process-coverage.html).
 
 | Workflow stage | POC status | App tab |
 |----------------|------------|---------|
