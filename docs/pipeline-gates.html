@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>GTM Deal Pipeline — three agents, three gates</title>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#f5f5f5; --paper-2:#ffffff;
+    --ink:#16263d; --muted:#4f5d75; --soft:#7a8399;
+    --rule:rgba(22,38,61,0.10);
+    --accent:#0c76d4; --accent-tint:rgba(12,118,212,0.08);
+    --link:#11a892;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;padding:3rem 3.5rem;background:var(--paper);color:var(--ink);
+       font-family:'Geist',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1160px;margin:0 auto}
+  .eyebrow{font-family:'Geist Mono',monospace;font-size:9px;letter-spacing:0.18em;
+           text-transform:uppercase;color:var(--accent);margin:0 0 0.75rem}
+  h1{font-family:'Instrument Serif',serif;font-weight:400;font-size:2.25rem;
+     line-height:1.1;margin:0 0 0.75rem;letter-spacing:-0.01em}
+  .sub{font-size:14px;line-height:1.55;color:var(--muted);max-width:74ch;margin:0 0 1.25rem}
+  svg{display:block;width:100%;height:auto}
+  .cards{display:grid;grid-template-columns:1.05fr 1.1fr 0.95fr;gap:1rem;margin-top:2.5rem}
+  .card{background:var(--paper-2);border:1px solid var(--rule);border-radius:6px;padding:1.25rem}
+  .card .eyebrow{color:var(--muted);margin-bottom:0.6rem}
+  .card-header{display:flex;align-items:center;gap:0.5rem;margin-bottom:0.6rem}
+  .card-dot{width:7px;height:7px;border-radius:50%;flex:none}
+  .dot-accent{background:var(--accent)} .dot-ink{background:var(--ink)} .dot-soft{background:var(--soft)}
+  .card h3{font-size:13px;font-weight:600;margin:0}
+  .card ul{margin:0;padding-left:1.05rem}
+  .card li{font-size:12px;line-height:1.65;color:var(--muted);margin-bottom:0.25rem}
+  code{font-family:'Geist Mono',monospace;font-size:11px;color:var(--ink)}
+  footer{margin-top:2.5rem;padding-top:1rem;border-top:1px solid var(--rule);
+         font-family:'Geist Mono',monospace;font-size:9px;letter-spacing:0.10em;color:var(--soft)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="eyebrow">GTM Deal Pipeline · in-app pipeline · 3 agents</p>
+  <h1>Three agents, three gates, two ways out</h1>
+  <p class="sub">A deal enters as free text and leaves either qualified — with a tier, a fit level and a module breakdown — or dropped with the gate that stopped it. Each stage is one agent returning JSON against a schema, and each can be run standalone from the CLI.</p>
+
+<svg viewBox="0 40 1072 600" role="img" aria-labelledby="gtmgates-title gtmgates-desc" xmlns="http://www.w3.org/2000/svg">
+  <title id="gtmgates-title">GTM Deal Pipeline — three agents and their Go/No-Go gates</title>
+  <desc id="gtmgates-desc">Deal info passes through three agent stages — scoring, discovery and solution shaping — each with a Go/No-Go gate. Deals that clear all three become a qualified deal with a tier and scope; deals that fail any gate are dropped with the reason logged. Stages two and three read the solution_master knowledge base.</desc>
+
+  <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/>
+    </marker>
+    <marker id="arrow-soft" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#7a8399"/>
+    </marker>
+    <marker id="arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#0c76d4"/>
+    </marker>
+  </defs>
+
+  <rect width="100%" height="100%" fill="#f5f5f5"/>
+
+  <!-- ══ ARROWS ══ -->
+
+  <!-- forward spine -->
+  <path d="M208,288 H244" fill="none" stroke="#4f5d75" stroke-width="1" marker-end="url(#arrow)"/>
+  <path d="M412,288 H448" fill="none" stroke="#4f5d75" stroke-width="1" marker-end="url(#arrow)"/>
+  <path d="M616,288 H652" fill="none" stroke="#4f5d75" stroke-width="1" marker-end="url(#arrow)"/>
+  <path d="M820,288 H856" fill="none" stroke="#0c76d4" stroke-width="1" marker-end="url(#arrow-accent)"/>
+
+  <!-- gate exits -->
+  <path d="M332,344 V488 Q332,496 340,496 H448" fill="none" stroke="#7a8399" stroke-width="1" marker-end="url(#arrow-soft)"/>
+  <path d="M536,344 V448" fill="none" stroke="#7a8399" stroke-width="1" marker-end="url(#arrow-soft)"/>
+  <path d="M740,344 V488 Q740,496 732,496 H624" fill="none" stroke="#7a8399" stroke-width="1" marker-end="url(#arrow-soft)"/>
+
+  <!-- knowledge-base reads -->
+  <path d="M588,152 V184 Q588,192 580,192 H544 Q536,192 536,200 V224" fill="none" stroke="#4f5d75" stroke-width="1" stroke-dasharray="5,4" marker-end="url(#arrow)"/>
+  <path d="M684,152 V184 Q684,192 692,192 H732 Q740,192 740,200 V224" fill="none" stroke="#4f5d75" stroke-width="1" stroke-dasharray="5,4" marker-end="url(#arrow)"/>
+
+  <!-- ══ ARROW LABELS ══ -->
+  <rect x="416" y="268" width="28" height="12" rx="2" fill="#f5f5f5"/>
+  <text x="430" y="277" fill="#4f5d75" font-size="8" font-family="'Geist Mono',monospace" text-anchor="middle" letter-spacing="0.06em">GO</text>
+
+  <rect x="620" y="268" width="28" height="12" rx="2" fill="#f5f5f5"/>
+  <text x="634" y="277" fill="#4f5d75" font-size="8" font-family="'Geist Mono',monospace" text-anchor="middle" letter-spacing="0.06em">FIT</text>
+
+  <rect x="824" y="268" width="28" height="12" rx="2" fill="#f5f5f5"/>
+  <text x="838" y="277" fill="#0c76d4" font-size="8" font-family="'Geist Mono',monospace" text-anchor="middle" letter-spacing="0.06em">PASS</text>
+
+  <rect x="344" y="400" width="40" height="12" rx="2" fill="#f5f5f5"/>
+  <text x="364" y="409" fill="#7a8399" font-size="8" font-family="'Geist Mono',monospace" text-anchor="middle" letter-spacing="0.06em">NO-GO</text>
+
+  <rect x="548" y="400" width="44" height="12" rx="2" fill="#f5f5f5"/>
+  <text x="570" y="409" fill="#7a8399" font-size="8" font-family="'Geist Mono',monospace" text-anchor="middle" letter-spacing="0.06em">NO FIT</text>
+
+  <rect x="752" y="400" width="64" height="12" rx="2" fill="#f5f5f5"/>
+  <text x="784" y="409" fill="#7a8399" font-size="8" font-family="'Geist Mono',monospace" text-anchor="middle" letter-spacing="0.06em">RATIO &gt; 60%</text>
+
+  <!-- ══ NODES ══ -->
+
+  <!-- KB store -->
+  <rect x="536" y="72" width="200" height="80" rx="6" fill="#f5f5f5"/>
+  <rect x="536" y="72" width="200" height="80" rx="6" fill="rgba(22,38,61,0.05)" stroke="#4f5d75" stroke-width="1"/>
+  <rect x="544" y="78" width="60" height="12" rx="2" fill="transparent" stroke="rgba(79,93,117,0.40)" stroke-width="0.8"/>
+  <text x="574" y="87" fill="#4f5d75" font-size="7" font-family="'Geist Mono',monospace" text-anchor="middle" letter-spacing="0.08em">KNOWLEDGE</text>
+  <text x="636" y="116" fill="#16263d" font-size="12" font-weight="600" font-family="'Geist',sans-serif" text-anchor="middle">solution_master.md</text>
+  <text x="636" y="134" fill="#4f5d75" font-size="9" font-family="'Geist Mono',monospace" text-anchor="middle">18 CSI solutions · editable</text>
+
+  <!-- Deal Info -->
+  <rect x="48" y="232" width="160" height="112" rx="6" fill="#f5f5f5"/>
+  <rect x="48" y="232" width="160" height="112" rx="6" fill="rgba(79,93,117,0.10)" stroke="#7a8399" stroke-width="1"/>
+  <rect x="56" y="240" width="36" height="12" rx="2" fill="transparent" stroke="rgba(122,131,153,0.50)" stroke-width="0.8"/>
+  <text x="74" y="249" fill="#4f5d75" font-size="7" font-family="'Geist Mono',monospace" text-anchor="middle" letter-spacing="0.08em">INPUT</text>
+  <text x="128" y="288" fill="#16263d" font-size="12" font-weight="600" font-family="'Geist',sans-serif" text-anchor="middle">Deal info</text>
+  <text x="128" y="306" fill="#4f5d75" font-size="9" font-family="'Geist Mono',monospace" text-anchor="middle">free text · one form</text>
+
+  <!-- Stage 1 -->
+  <rect x="252" y="232" width="160" height="112" rx="6" fill="#f5f5f5"/>
+  <rect x="252" y="232" width="160" height="112" rx="6" fill="#ffffff" stroke="#16263d" stroke-width="1"/>
+  <rect x="260" y="240" width="44" height="12" rx="2" fill="transparent" stroke="rgba(22,38,61,0.40)" stroke-width="0.8"/>
+  <text x="282" y="249" fill="#16263d" font-size="7" font-family="'Geist Mono',monospace" text-anchor="middle" letter-spacing="0.08em">STAGE 1</text>
+  <text x="332" y="280" fill="#16263d" font-size="12" font-weight="600" font-family="'Geist',sans-serif" text-anchor="middle">Scoring</text>
+  <text x="332" y="298" fill="#4f5d75" font-size="9" font-family="'Geist Mono',monospace" text-anchor="middle">BANTi 0-100 · F³ 0-15</text>
+  <text x="332" y="322" fill="#0c76d4" font-size="9" font-family="'Geist Mono',monospace" text-anchor="middle">gate BANTi ≥ 60</text>
+
+  <!-- Stage 2 -->
+  <rect x="456" y="232" width="160" height="112" rx="6" fill="#f5f5f5"/>
+  <rect x="456" y="232" width="160" height="112" rx="6" fill="#ffffff" stroke="#16263d" stroke-width="1"/>
+  <rect x="464" y="240" width="44" height="12" rx="2" fill="transparent" stroke="rgba(22,38,61,0.40)" stroke-width="0.8"/>
+  <text x="486" y="249" fill="#16263d" font-size="7" font-family="'Geist Mono',monospace" text-anchor="middle" letter-spacing="0.08em">STAGE 2</text>
+  <text x="536" y="280" fill="#16263d" font-size="12" font-weight="600" font-family="'Geist',sans-serif" text-anchor="middle">Discovery</text>
+  <text x="536" y="298" fill="#4f5d75" font-size="9" font-family="'Geist Mono',monospace" text-anchor="middle">map pains → solutions</text>
+  <text x="536" y="322" fill="#0c76d4" font-size="9" font-family="'Geist Mono',monospace" text-anchor="middle">gate ≤ 50% custom</text>
+
+  <!-- Stage 3 -->
+  <rect x="660" y="232" width="160" height="112" rx="6" fill="#f5f5f5"/>
+  <rect x="660" y="232" width="160" height="112" rx="6" fill="#ffffff" stroke="#16263d" stroke-width="1"/>
+  <rect x="668" y="240" width="44" height="12" rx="2" fill="transparent" stroke="rgba(22,38,61,0.40)" stroke-width="0.8"/>
+  <text x="690" y="249" fill="#16263d" font-size="7" font-family="'Geist Mono',monospace" text-anchor="middle" letter-spacing="0.08em">STAGE 3</text>
+  <text x="740" y="280" fill="#16263d" font-size="12" font-weight="600" font-family="'Geist',sans-serif" text-anchor="middle">Solution shaping</text>
+  <text x="740" y="298" fill="#4f5d75" font-size="9" font-family="'Geist Mono',monospace" text-anchor="middle">modules · risks · F³</text>
+  <text x="740" y="322" fill="#0c76d4" font-size="9" font-family="'Geist Mono',monospace" text-anchor="middle">gate fit≥3 &amp; feas≥3</text>
+
+  <!-- Qualified — FOCAL -->
+  <rect x="864" y="232" width="160" height="112" rx="6" fill="#f5f5f5"/>
+  <rect x="864" y="232" width="160" height="112" rx="6" fill="rgba(12,118,212,0.08)" stroke="#0c76d4" stroke-width="1"/>
+  <rect x="872" y="240" width="44" height="12" rx="2" fill="transparent" stroke="rgba(12,118,212,0.40)" stroke-width="0.8"/>
+  <text x="894" y="249" fill="#0c76d4" font-size="7" font-family="'Geist Mono',monospace" text-anchor="middle" letter-spacing="0.08em">OUTCOME</text>
+  <text x="944" y="288" fill="#16263d" font-size="12" font-weight="600" font-family="'Geist',sans-serif" text-anchor="middle">Qualified deal</text>
+  <text x="944" y="306" fill="#4f5d75" font-size="9" font-family="'Geist Mono',monospace" text-anchor="middle">Tier 1-3 · scope · risk</text>
+
+  <!-- Dropped -->
+  <rect x="456" y="456" width="160" height="80" rx="6" fill="#f5f5f5"/>
+  <rect x="456" y="456" width="160" height="80" rx="6" fill="rgba(22,38,61,0.02)" stroke="rgba(22,38,61,0.20)" stroke-width="1" stroke-dasharray="4,3"/>
+  <rect x="464" y="462" width="32" height="12" rx="2" fill="transparent" stroke="rgba(22,38,61,0.25)" stroke-width="0.8"/>
+  <text x="480" y="471" fill="#7a8399" font-size="7" font-family="'Geist Mono',monospace" text-anchor="middle" letter-spacing="0.08em">STOP</text>
+  <text x="536" y="502" fill="#16263d" font-size="12" font-weight="600" font-family="'Geist',sans-serif" text-anchor="middle">Dropped</text>
+  <text x="536" y="520" fill="#4f5d75" font-size="9" font-family="'Geist Mono',monospace" text-anchor="middle">reason logged to CSV</text>
+
+  <!-- ══ LEGEND ══ -->
+  <line x1="48" y1="576" x2="1024" y2="576" stroke="rgba(22,38,61,0.10)" stroke-width="0.8"/>
+  <text x="48" y="600" fill="#4f5d75" font-size="8" font-family="'Geist Mono',monospace" letter-spacing="0.14em">LEGEND</text>
+
+  <line x1="140" y1="596" x2="176" y2="596" stroke="#4f5d75" stroke-width="1" marker-end="url(#arrow)"/>
+  <text x="188" y="600" fill="#4f5d75" font-size="8" font-family="'Geist Mono',monospace">clears the gate</text>
+
+  <line x1="320" y1="596" x2="356" y2="596" stroke="#7a8399" stroke-width="1" marker-end="url(#arrow-soft)"/>
+  <text x="368" y="600" fill="#4f5d75" font-size="8" font-family="'Geist Mono',monospace">exits at the gate</text>
+
+  <line x1="504" y1="596" x2="540" y2="596" stroke="#4f5d75" stroke-width="1" stroke-dasharray="5,4" marker-end="url(#arrow)"/>
+  <text x="552" y="600" fill="#4f5d75" font-size="8" font-family="'Geist Mono',monospace">reads the knowledge base</text>
+
+  <rect x="756" y="588" width="14" height="14" rx="3" fill="rgba(12,118,212,0.08)" stroke="#0c76d4" stroke-width="1"/>
+  <text x="780" y="600" fill="#4f5d75" font-size="8" font-family="'Geist Mono',monospace">the only way through</text>
+</svg>
+
+  <div class="cards">
+    <div class="card">
+      <p class="eyebrow">One agent per stage</p>
+      <div class="card-header"><span class="card-dot dot-ink"></span><h3>Runnable standalone</h3></div>
+      <ul>
+        <li><code>scoring_agent.py</code> — BANTi (5×20) + F³ (3×5)</li>
+        <li><code>discovery_agent.py</code> — fit level per requirement</li>
+        <li><code>solution_shaping_agent.py</code> — modules, functions, risk</li>
+        <li>Each returns JSON against a schema in its prompt — no free-form text accepted</li>
+      </ul>
+    </div>
+    <div class="card">
+      <p class="eyebrow">Gate arithmetic</p>
+      <div class="card-header"><span class="card-dot dot-accent"></span><h3>What each gate tests</h3></div>
+      <ul>
+        <li><strong>1 · Scoring</strong> — Go if BANTi ≥ 60 / 100</li>
+        <li><strong>2 · Discovery</strong> — Full Fit &lt; 20% custom · Partial Fit 20–50% · Full Custom &gt; 50% (all-custom ⇒ No Fit)</li>
+        <li><strong>3 · Shaping</strong> — Go if solution_fit ≥ 3 <em>and</em> feasibility ≥ 3; No-Go if customization_ratio &gt; 60%</li>
+      </ul>
+    </div>
+    <div class="card">
+      <p class="eyebrow">Tier ladder · from F³</p>
+      <div class="card-header"><span class="card-dot dot-soft"></span><h3>How the deal gets sold</h3></div>
+      <ul>
+        <li><strong>Tier 1</strong> · F³ &lt; 8 → template proposal</li>
+        <li><strong>Tier 2</strong> · F³ 8–11 → story-driven proposal</li>
+        <li><strong>Tier 3</strong> · F³ 12–15 → strategic C-level consulting</li>
+      </ul>
+    </div>
+  </div>
+
+  <footer>GTM-DEALPIPELINE · IN-APP PIPELINE (3 AGENTS) · CSI GROUPS · POC</footer>
+</div>
+</body>
+</html>

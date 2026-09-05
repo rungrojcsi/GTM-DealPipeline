@@ -117,15 +117,11 @@ Design principles:
 
 ### In-app pipeline (3 agents)
 
-```mermaid
-flowchart LR
-    A[Deal Info] --> B["1 Scoring<br/>BANTi 0-100 + F³ 0-15"]
-    B -->|Go| C["2 Discovery<br/>map vs Solution Master"]
-    B -->|No-Go| X([stop])
-    C -->|"Full/Partial Fit"| D["3 Solution Shaping<br/>modules + risks"]
-    C -->|No Fit| X
-    D --> E([Go / No-Go + Tier])
-```
+![In-app pipeline — three agents, three Go/No-Go gates](docs/images/pipeline-gates.png)
+
+Every gate is a hard stop: a deal either clears all three and comes out with a tier, a fit level and a module
+breakdown, or it is dropped with the gate that stopped it recorded. Diagram source:
+[`docs/pipeline-gates.html`](docs/pipeline-gates.html).
 
 | Stage | File | Role |
 |-------|------|------|
